@@ -122,7 +122,7 @@ Error in make.names(col.names, unique = TRUE) :
 
 - 查詢檔案的編碼
 - 常見的中文編碼有UTF-8和BIG-5
-```{r echo=TRUE}
+```{r echo=TRUE, eval=FALSE}
 # 利用`fileEncoding`參數選擇檔案編碼 - big5 / utf8
 dat2 <- read.csv(url, fileEncoding = "big5")
 ```
