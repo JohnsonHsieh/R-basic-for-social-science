@@ -42,7 +42,7 @@ download.file(url, destfile = "hsb.csv") # 把檔案另存成hbs.csv
 dat <- read.csv("hsb.csv")
 head(dat)
 ```
-```{r}
+```{r echo=FALSE}
 dat <- read.csv("hsb.csv")
 head(dat)
 ```
@@ -127,23 +127,66 @@ Error in make.names(col.names, unique = TRUE) :
 dat2 <- read.csv(url, fileEncoding = "big5")
 ```
 
-# Ch02：逐行的輸入與輸出
+## 讀取其他軟體資料集
+- For SPSS and Stata datasets, use the `foreign` package
+- Cars: [Cars.sav](http://calcnet.mth.cmich.edu/org/spss/V16_materials/DataSets_v16/Cars.sav)
+- Milk Production: [p004.dat](http://www.ats.ucla.edu/stat/stata/examples/chp/p004.dta)
+```{r}
+# install.packages("foreign") # 安裝R套件 foreign
+library(foreign) # 載入套件 
+cars <- read.spss("data/Cars.sav", to.data.frame = TRUE)
+milk <- read.dta("data/p004.dta")
+# head(cars)
+# head(milk)
+```
+
+## 讀取其他軟體資料集
+- For SAS datasets, use the `sas7bdat` package
+- airline: [airline.sas7bdat](http://www.principlesofeconometrics.com/sas/airline.sas7bdat)
+
+```{r}
+# install.packages("sas7bdat")
+library(sas7bdat)
+airline <- read.sas7bdat("data/airline.sas7bdat")
+head(airline)
+```
+
+# Ch02：讀取網頁內容(Lite)
 
 ## 逐行輸入與輸出
 - `readLines`, `writeLines`
+- 是讀取網頁原始碼的好工具
 ```{r echo=TRUE}
 output <- file("output.txt")
 writeLines(as.character(1:12), con = output)
 input <- readLines(output)
+input
 ```
 
+
+## 練習
+從[網頁中](http://s40.ptt01.cc/post_17476)，找出藝人官方身高
+```{r}
+web_page <- readLines("http://s40.ptt01.cc/post_17476")
+matches <- gregexpr("[\u4E00-\u9FA5]+官方身高：[0-9]+", web_page)
+tmp <- regmatches(web_page, matches)
+unlist(tmp)
+```
+其中：
+```
+[\u4E00-\u9FA5]  表示所有中文字符
+[0-9]	           含數字之字串
+[a]+             一或多個 a
+```
+
+
 ## 進階練習
-找出清心福全台北市南港店的地址
+找出[清心福全](http://www.319papago.idv.tw/lifeinfo/chingshin/chingshin-02.html)台北市南港店的地址
 ```{r echo=TRUE}
 web_page <- readLines("http://www.319papago.idv.tw/lifeinfo/chingshin/chingshin-02.html")
 matches <- gregexpr("台北市南港區[\u4E00-\u9FA5|0-9|(|)]+", web_page)
 tmp <- regmatches(web_page, matches)
-unlist(tmp) 
+unlist(tmp) # 把 list 轉成 vector
 ```
 
 ## 小挑戰
@@ -241,9 +284,7 @@ foo <- function(x){
     cat(x, "is equal to 2")
   }  
 }
-foo(1)
-foo(2)
-foo(3)
+foo(1); foo(2); foo(3)
 ```
 
 
@@ -278,6 +319,83 @@ for(i in 1:4){
 }
 ```
 
+## 進階練習
+- 請先下載 [movies.zip](https://github.com/JohnsonHsieh/R-basic-for-social-science/raw/gh-pages/data/movies.zip) (解壓縮後有21個檔案)
+- 一口氣讀入全部的檔案 (Hint: `dir + for loop + list`)
+- 將檔案合併 (Hint: `do.call + rbind`)
+
+## 進階練習(1)
+```{r echo=TRUE}
+# 展示movies資料夾下所有的檔案
+fname <- dir("data/movies/")
+fname
+```
+
+## 進階練習(2)
+```{r echo=TRUE}
+# 展示movies資料夾下所有的檔案
+fname <- dir("data/movies/")
+# 練習讀一個csv檔 (movies-1995.csv)
+path <- paste("data/movies/", fname[1], sep="")
+mov95 <- read.csv(path)
+head(mov95)
+```
+
+## 進階練習(3)
+```{r echo=TRUE}
+# 展示movies資料夾下所有的檔案
+fname <- dir("data/movies/")
+# 練習讀多個csv檔
+mov <- list() # 預設一個名為 mov 的list容器
+for(i in 1:length(fname)){
+  path <- paste("data/movies/", fname[i], sep="")
+  mov[[i]] <- read.csv(path)
+}
+head(mov[[1]])
+```
+
+## 進階練習(4)
+```{r echo=TRUE}
+# 將list用列合併(rbind)整合成data.frame
+df <- do.call(rbind, mov) 
+head(df)
+```
+
+## 小挑戰
+- 只讀取1995-1999電影資料
+- 提示：`gregexpr("movies-199[5-9]+.csv", fname)`
+
+
+## 小挑戰 (參考解答)
+- 只讀取1995-1999電影資料
+- 提示：`gregexpr("movies-199[5-9]+.csv", fname)`
+```{r}
+matches <- gregexpr("movies-199[5-9]+.csv", fname)
+tmp <- regmatches(fname, matches)
+fname90 <- unlist(tmp)
+mov90 <- list() # 預設一個名為 mov 的list容器
+for(i in 1:length(fname90)){
+  path <- paste("data/movies/", fname90[i], sep="")
+  mov90[[i]] <- read.csv(path)
+}
+df90 <- do.call(rbind, mov90)
+# tail(df90) # 最後6筆
+```
+
+## 練習寫一個批次讀檔函數
+```{r}
+myRead <- function(fname, path0="data/movies/"){
+  mov <- list()
+  for(i in 1:length(fname)){
+    path <- paste(path0, fname[i], sep="")
+    mov[[i]] <- read.csv(path)
+  }
+  do.call(rbind, mov)
+}
+df <- myRead(fname90, path0="data/movies/")
+head(df)
+```
+
 # Ch06: Pipe Line Coding Style
 
 ## 2014 年最有影響的套件之一：magrittr
@@ -289,17 +407,16 @@ for(i in 1:4){
 
 ## 基本算子 (`%>%`)
 - 想像一下程式的寫作與閱讀邏輯
-- %>% 會將算子左邊的物件 (object) 傳到右邊的函數 (function) 中第一個argument
+- `%>%` 會將算子左邊的物件 (object) 傳到右邊的函數 (function) 中第一個argument
 - . 點號適合用在欲傳入變數不是在傳入函數的第一個位置時使用
-- use x %>% f, rather than f(x)
-- or use x %>% f(y, z), rather than f(x, y, z)
-- or y %>% f(x, ., z), rather than f(x, y, z)
+- use `x %>% f`, rather than `f(x)`
+- or use `x %>% f(y, z)`, rather than `f(x, y, z)`
+- or `y %>% f(x, ., z)`, rather than `f(x, y, z)`
 
 ```{r}
 # install.packages("magrittr")
 library(magrittr)
 x <- 1:10
-
 mean(x)
 x %>% mean # 由左而右順序操作
 ```
@@ -317,7 +434,6 @@ a %>% tri_area(., h=5)  # 以 `.` 來表示欲傳入的變數
 ```
 
 ## 
-
 ```{r eval=FALSE}
 # 指令壓縮
 plot(density(sample(mtcars$mpg, size=10000, replace=TRUE), kernel="gaussian"), col="red", main="density of mpg")
@@ -363,6 +479,11 @@ vignette("introduction", package = "dplyr")
 <center>`r fig("R_ETL_Fn1.png")`</center>
 出處：[資料科學愛好者年會資料分析上手課程：ETL1](https://www.youtube.com/watch?v=JD1eDxxrur0)
 
+## 資料排序 `arrange`
+<center>
+<img src='img/arrange.png' height=300 align='center'></img><img src='img/arranged.png' height=300 align='center'></img>
+</center>
+
 ## 資料排序
 - arrange(dataframe, 要進行排序的項目,….)
 - 排序預設是由小到大
@@ -391,13 +512,23 @@ arrange(iris, desc(Petal.Length), - Sepal.Length ) %>% head
 - 隨機抽取資料: `sample_n(iris, 5)`
 - 抽取指定列: `slice(iris, c(1,3,4,5))`
 
-## 對列做篩選 
+## 對列做篩選 `filter`
+<center>
+<img src='img/filter1.png' width=300 align='center'></img><img src='img/filter2.png' width=300 align='center'>
+</center>
+
+## 對列做篩選 `filter`
 ```{r}
 filter(iris,Sepal.Length == 7.7)
 filter(iris,Sepal.Length == 7.7,Sepal.Width ==2.8)
 ```
 
-## 對行做選取
+## 對行做選取 `select`
+<center>
+<img src='img/select1.png' height=300 align='center'></img><img src='img/select2.png' height=300 align='center'>
+</center>
+
+## 對行做選取 `select`
 ```{r}
 select(iris,c(Petal.Width, Species))
 ```
@@ -408,7 +539,13 @@ select(iris,c(Petal.Width, Species))
 select(iris,c(-Petal.Width,-Species))
 ```
 
-## 新增欄位
+## 新增欄位 `mutate`
+<center>
+<img src='img/origin.png' width=300 align='center'></img><img src='img/mutate.png' width=300 align='center'>
+</center>
+
+
+## 新增欄位 `mutate`
 - 如果想要做不同欄位間計算後得到新的欄位該如何處理
 - 譬如 `Petal.Length * Petal.Width`
 ```{r}
@@ -416,15 +553,22 @@ tmpiris <- mutate(iris, Petal.Vol = Petal.Length * Petal.Width)
 head(tmpiris)
 ```
 
+## 樞紐分析 `group_by` + `summarise`
+<center>
+<img src='img/origin.png' width=300 align='center'></img><img src='img/group_by.png' width=300 align='center'></img><img src='img/summarise.png' width=300 align='center'>
+</center>
+
 ## 樞紐分析
-- 如果我想要 Sepal.Length 的 mean、Sepal.Width 的標準差、Petal.Length 的最大值
+- 如果想要 Sepal.Length 的 mean、Sepal.Width 的標準差、Petal.Length 的最大值
 - 利用`summarise`
 ```{r}
 summarise(iris, SL.mean=mean(Sepal.Length), SW.sd=sd(Sepal.Width), PL.max=max(Petal.Length))
 ```
 
+
+
 ## 樞紐分析
-- 如果我想要 Sepal.Length 的 mean、Sepal.Width 的標準差、Petal.Length 的最大值
+- 如果想要 Sepal.Length 的 mean、Sepal.Width 的標準差、Petal.Length 的最大值
 - 依照物種類別各自計算
 - 利用`group_by` + `summarise`
 ```{r}
@@ -432,18 +576,56 @@ group_by(iris, Species) %>%
   summarise(SL.mean=mean(Sepal.Length), SW.sd=sd(Sepal.Width), PL.max=max(Petal.Length))
 ```
 
+## 資料表合併 {.columns-2}
+- `bind_rows`
+
+<img src='img/bind_rows.png' height=400 align='center'></img>
+
+- `bond_cols`
+
+<img src='img/bind_col.png' height=300 align='center'></img>
+
 ## 資料表合併
-- `bind_rows`, `bond_cols`
 - `left_join`
 - `full_join`
 - `inner_join`
 - ...
+<center>
+<img src='img/join1.png' height=300 align='center'></img><img src='img/join2.png' height=300 align='center'></img>
+</center>
 
+## 資料拉皮 `reshape2`
+- `melt`: wide format -> long format
+- `dcast`: long format -> wide format
+<center>
+<img src='img/reshaping.png' height=400 align='center'>
+</center>
+
+## 資料拉皮 `reshape2`
+- `melt`: wide format -> long format
+- `dcast`: long format -> wide format
+```{r}
+# install.packages("reshape2")
+library(reshape2)
+WP.melt <- data.frame(WorldPhones)
+WP.melt$year <- rownames(WP.melt)  
+WP.melt <- melt(WP.melt, id="year")
+head(WP.melt)
+```
+
+## 資料拉皮 `reshape2`
+- `melt`: wide format -> long format
+- `dcast`: long format -> wide format
+```{r}
+WP.cast <- dcast(WP.melt, year~variable,value.var="value") 
+head(WP.cast)
+```
 
 ## 補充資料
 - [Learn R in R (Swirls)](https://github.com/wush978/DataScienceAndR)
 - [Data Wrangling Cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
 - [Introduction to dplyr](https://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html)
+- [An Introduction to reshape2](http://seananderson.ca/2013/10/19/reshape.html)
 - [Cookbook for R](http://www.cookbook-r.com/)
 
 ## 繼續學習之路
