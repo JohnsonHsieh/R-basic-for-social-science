@@ -448,6 +448,34 @@ mtcars$mpg %>%
 
 
 # 資料處理
+
+## 資料拉皮 `reshape2`
+- `melt`: wide format -> long format
+- `dcast`: long format -> wide format
+<center>
+<img src='img/reshaping.png' height=400 align='center'>
+</center>
+
+## 資料拉皮 `reshape2`
+- `melt`: wide format -> long format
+- `dcast`: long format -> wide format
+```{r}
+# install.packages("reshape2")
+library(reshape2)
+WP.melt <- data.frame(WorldPhones)
+WP.melt$year <- rownames(WP.melt)  
+WP.melt <- melt(WP.melt, id="year")
+head(WP.melt)
+```
+
+## 資料拉皮 `reshape2`
+- `melt`: wide format -> long format
+- `dcast`: long format -> wide format
+```{r}
+WP.cast <- dcast(WP.melt, year~variable,value.var="value") 
+head(WP.cast)
+```
+
 ## 2014 年最有影響的套件之一：dplyr
 
 - 讓R 使用者可以用更有彈性的方式來處理資料
@@ -594,32 +622,7 @@ group_by(iris, Species) %>%
 <img src='img/join1.png' height=300 align='center'></img><img src='img/join2.png' height=300 align='center'></img>
 </center>
 
-## 資料拉皮 `reshape2`
-- `melt`: wide format -> long format
-- `dcast`: long format -> wide format
-<center>
-<img src='img/reshaping.png' height=400 align='center'>
-</center>
 
-## 資料拉皮 `reshape2`
-- `melt`: wide format -> long format
-- `dcast`: long format -> wide format
-```{r}
-# install.packages("reshape2")
-library(reshape2)
-WP.melt <- data.frame(WorldPhones)
-WP.melt$year <- rownames(WP.melt)  
-WP.melt <- melt(WP.melt, id="year")
-head(WP.melt)
-```
-
-## 資料拉皮 `reshape2`
-- `melt`: wide format -> long format
-- `dcast`: long format -> wide format
-```{r}
-WP.cast <- dcast(WP.melt, year~variable,value.var="value") 
-head(WP.cast)
-```
 
 ## 補充資料
 - [Learn R in R (Swirls)](https://github.com/wush978/DataScienceAndR)
